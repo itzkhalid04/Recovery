@@ -1,4 +1,3 @@
-// RecoverableFile.kt
 package com.datarescue.pro.domain.model
 
 import android.os.Parcelable
@@ -32,9 +31,9 @@ enum class FileType(val displayName: String, val emoji: String) {
 }
 
 enum class ScanType(val displayName: String, val description: String) {
-    QUICK("Quick Scan", "Recently deleted files"),
-    DEEP("Deep Scan", "Comprehensive recovery"),
-    TARGETED("Targeted Scan", "Specific file types")
+    QUICK("Quick Scan", "Recently deleted files from MediaStore"),
+    DEEP("Deep Scan", "Comprehensive scan including cache and temp files"),
+    TARGETED("Targeted Scan", "Specific app directories and common locations")
 }
 
 data class ScanProgress(

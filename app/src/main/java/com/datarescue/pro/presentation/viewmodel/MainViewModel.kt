@@ -1,4 +1,3 @@
-// MainViewModel.kt
 package com.datarescue.pro.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
@@ -22,16 +21,22 @@ class MainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    private val _scanProgress = MutableStateFlow(ScanProgress())
-    val scanProgress: StateFlow<ScanProgress> = _scanProgress
+    val scanProgress: StateFlow<ScanProgress> = getScanProgressUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ScanProgress()
+        )
 
-    private val _isScanning = MutableStateFlow(false)
-    val isScanning: StateFlow<Boolean> = _isScanning
+    val isScanning: StateFlow<Boolean> = isScanningUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
 
     init {
         loadInitialState()
-        observeScanProgress()
-        observeScanningStatus()
     }
 
     private fun loadInitialState() {
@@ -40,22 +45,6 @@ class MainViewModel @Inject constructor(
                 currentState.copy(
                     fileTypeFilters = getDefaultFiltersUseCase()
                 )
-            }
-        }
-    }
-
-    private fun observeScanProgress() {
-        viewModelScope.launch {
-            getScanProgressUseCase().collect { progress ->
-                _scanProgress.value = progress
-            }
-        }
-    }
-
-    private fun observeScanningStatus() {
-        viewModelScope.launch {
-            isScanningUseCase().collect { scanning ->
-                _isScanning.value = scanning
             }
         }
     }
@@ -77,12 +66,20 @@ class MainViewModel @Inject constructor(
 
     fun startScan() {
         viewModelScope.launch {
-            startScanUseCase(
-                _uiState.value.selectedScanType,
-                _uiState.value.fileTypeFilters.filter { it.enabled }
-            ).collect { files ->
+            try {
+                _uiState.update { it.copy(error = null, recoveredFiles = emptyList()) }
+                
+                startScanUseCase(
+                    _uiState.value.selectedScanType,
+                    _uiState.value.fileTypeFilters.filter { it.enabled }
+                ).collect { files ->
+                    _uiState.update { currentState ->
+                        currentState.copy(recoveredFiles = files)
+                    }
+                }
+            } catch (e: Exception) {
                 _uiState.update { currentState ->
-                    currentState.copy(recoveredFiles = files)
+                    currentState.copy(error = "Scan failed: ${e.message}")
                 }
             }
         }
@@ -92,6 +89,10 @@ class MainViewModel @Inject constructor(
         viewModelScope.launch {
             stopScanUseCase()
         }
+    }
+
+    fun clearError() {
+        _uiState.update { it.copy(error = null) }
     }
 }
 
