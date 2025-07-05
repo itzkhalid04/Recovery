@@ -35,7 +35,7 @@ fun ScanProgressCard(
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "${progress.percentage}%",
+                    text = "${progress.percentage.coerceIn(0, 100)}%",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary
@@ -45,16 +45,23 @@ fun ScanProgressCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             LinearProgressIndicator(
-                progress = progress.percentage / 100f,
+                progress = (progress.percentage.coerceIn(0, 100) / 100f),
                 modifier = Modifier.fillMaxWidth()
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(
-                text = "Files scanned: ${progress.filesScanned} / ${progress.totalFiles}",
-                style = MaterialTheme.typography.bodyMedium
-            )
+            if (progress.totalFiles > 0) {
+                Text(
+                    text = "Files scanned: ${progress.filesScanned} / ${progress.totalFiles}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            } else {
+                Text(
+                    text = "Files scanned: ${progress.filesScanned}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
 
             if (progress.currentFile.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
@@ -66,6 +73,27 @@ fun ScanProgressCard(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+
+            if (progress.timeElapsed > 0) {
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Time elapsed: ${formatTime(progress.timeElapsed)}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
+    }
+}
+
+private fun formatTime(milliseconds: Long): String {
+    val seconds = milliseconds / 1000
+    val minutes = seconds / 60
+    val remainingSeconds = seconds % 60
+    
+    return if (minutes > 0) {
+        "${minutes}m ${remainingSeconds}s"
+    } else {
+        "${remainingSeconds}s"
     }
 }

@@ -8,13 +8,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.datarescue.pro.domain.model.FileType
 import com.datarescue.pro.domain.model.FileTypeFilter
 
 @Composable
 fun FileTypeCard(
     filter: FileTypeFilter,
     onToggle: (Boolean) -> Unit,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -50,7 +50,8 @@ fun FileTypeCard(
 
             Switch(
                 checked = filter.enabled,
-                onCheckedChange = onToggle
+                onCheckedChange = onToggle,
+                enabled = enabled
             )
         }
     }

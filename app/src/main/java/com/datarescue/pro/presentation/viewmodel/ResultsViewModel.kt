@@ -58,14 +58,31 @@ class ResultsViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isRecovering = true)
             
-            recoverFilesUseCase(selectedFiles, "/storage/emulated/0/DataRescue")
-                .collect { result ->
-                    _uiState.value = _uiState.value.copy(
-                        recoveryResult = result,
-                        isRecovering = false
-                    )
-                }
+            try {
+                recoverFilesUseCase(selectedFiles, "/storage/emulated/0/DataRescue")
+                    .collect { result ->
+                        _uiState.value = _uiState.value.copy(
+                            recoveryResult = result,
+                            isRecovering = false
+                        )
+                    }
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    recoveryResult = RecoveryResult(
+                        success = false,
+                        recoveredFiles = 0,
+                        failedFiles = selectedFiles.size,
+                        errors = listOf("Recovery failed: ${e.message}"),
+                        totalSize = 0L
+                    ),
+                    isRecovering = false
+                )
+            }
         }
+    }
+
+    fun dismissRecoveryResult() {
+        _uiState.value = _uiState.value.copy(recoveryResult = null)
     }
 
     private fun getFilteredFiles(): List<RecoverableFile> {

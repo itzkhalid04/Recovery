@@ -1,4 +1,3 @@
-// MainScreen.kt
 package com.datarescue.pro.presentation.ui.screens
 
 import androidx.compose.foundation.background
@@ -23,20 +22,24 @@ import com.datarescue.pro.presentation.ui.components.ScanProgressCard
 import com.datarescue.pro.presentation.ui.theme.PrimaryBlue
 import com.datarescue.pro.presentation.ui.theme.PrimaryPurple
 import com.datarescue.pro.presentation.viewmodel.MainViewModel
+import com.datarescue.pro.presentation.viewmodel.SharedDataViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
-    onNavigateToResults: (List<com.datarescue.pro.domain.model.RecoverableFile>) -> Unit,
+    sharedViewModel: SharedDataViewModel,
+    onNavigateToResults: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val scanProgress by viewModel.scanProgress.collectAsStateWithLifecycle()
     val isScanning by viewModel.isScanning.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.recoveredFiles) {
+    // Update shared data when scan completes
+    LaunchedEffect(uiState.recoveredFiles, isScanning) {
         if (uiState.recoveredFiles.isNotEmpty() && !isScanning) {
-            onNavigateToResults(uiState.recoveredFiles)
+            sharedViewModel.setRecoveredFiles(uiState.recoveredFiles)
+            onNavigateToResults()
         }
     }
 
@@ -108,7 +111,8 @@ fun MainScreen(
                                     onClick = { viewModel.onScanTypeChanged(scanType) },
                                     label = { Text(scanType.displayName) },
                                     selected = uiState.selectedScanType == scanType,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.weight(1f),
+                                    enabled = !isScanning
                                 )
                             }
                         }
@@ -137,7 +141,8 @@ fun MainScreen(
                     filter = filter,
                     onToggle = { enabled ->
                         viewModel.onFileTypeToggled(filter.type, enabled)
-                    }
+                    },
+                    enabled = !isScanning
                 )
             }
 
@@ -160,7 +165,7 @@ fun MainScreen(
                                 .padding(16.dp)
                         ) {
                             Text(
-                                text = "Found Files",
+                                text = "Scan Complete - Found ${uiState.recoveredFiles.size} Files",
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
@@ -172,19 +177,22 @@ fun MainScreen(
                             ) {
                                 FileType.values().take(4).forEach { type ->
                                     val count = uiState.recoveredFiles.count { it.type == type }
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally
-                                    ) {
-                                        Text(
-                                            text = count.toString(),
-                                            style = MaterialTheme.typography.headlineSmall,
-                                            fontWeight = FontWeight.Bold
-                                        )
-                                        Text(
-                                            text = type.displayName,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    if (count > 0) {
+                                        Column(
+                                            horizontalAlignment = Alignment.CenterHorizontally
+                                        ) {
+                                            Text(
+                                                text = count.toString(),
+                                                style = MaterialTheme.typography.headlineSmall,
+                                                fontWeight = FontWeight.Bold,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Text(
+                                                text = type.displayName,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -211,20 +219,35 @@ fun MainScreen(
                             .height(56.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
+                            containerColor = if (isScanning) MaterialTheme.colorScheme.error 
+                                           else MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         )
                     ) {
-                        Text(
-                            text = if (isScanning) "Stop Scan" else "Start Scan",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        if (isScanning) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Stop Scan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        } else {
+                            Text(
+                                text = "Start Scan",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
 
                     if (uiState.recoveredFiles.isNotEmpty() && !isScanning) {
                         OutlinedButton(
-                            onClick = { onNavigateToResults(uiState.recoveredFiles) },
+                            onClick = { onNavigateToResults() },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp),
@@ -238,6 +261,11 @@ fun MainScreen(
                         }
                     }
                 }
+            }
+
+            // Add some bottom padding
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }

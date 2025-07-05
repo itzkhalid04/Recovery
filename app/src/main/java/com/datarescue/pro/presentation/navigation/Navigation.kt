@@ -5,31 +5,33 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.datarescue.pro.domain.model.RecoverableFile
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.datarescue.pro.presentation.ui.screens.MainScreen
 import com.datarescue.pro.presentation.ui.screens.ResultsScreen
+import com.datarescue.pro.presentation.viewmodel.SharedDataViewModel
 
 @Composable
 fun DataRescueNavigation(
     navController: NavHostController = rememberNavController()
 ) {
+    val sharedViewModel: SharedDataViewModel = hiltViewModel()
+    
     NavHost(
         navController = navController,
         startDestination = "main"
     ) {
         composable("main") {
             MainScreen(
-                onNavigateToResults = { files ->
-                    // In a real app, you'd pass this data properly
+                sharedViewModel = sharedViewModel,
+                onNavigateToResults = {
                     navController.navigate("results")
                 }
             )
         }
         
         composable("results") {
-            // In a real app, you'd get the files from navigation arguments or shared state
             ResultsScreen(
-                recoveredFiles = emptyList(), // This would come from navigation args
+                sharedViewModel = sharedViewModel,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
