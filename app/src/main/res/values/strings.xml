@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">DataRescue Pro</string>
+    <string name="scan_type_quick">Quick Scan</string>
+    <string name="scan_type_deep">Deep Scan</string>
+    <string name="scan_type_targeted">Targeted Scan</string>
+    <string name="file_type_photos">Photos</string>
+    <string name="file_type_videos">Videos</string>
+    <string name="file_type_documents">Documents</string>
+    <string name="file_type_audio">Audio</string>
+    <string name="file_type_archives">Archives</string>
+    <string name="file_type_apks">APKs</string>
+</resources>
