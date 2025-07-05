@@ -2,8 +2,8 @@ package com.datarescue.pro.presentation.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.datarescue.pro.data.repository.AdvancedFileRecoveryRepository
 import com.datarescue.pro.domain.model.*
-import com.datarescue.pro.domain.usecase.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -11,24 +11,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
-    private val startScanUseCase: StartScanUseCase,
-    private val getScanProgressUseCase: GetScanProgressUseCase,
-    private val stopScanUseCase: StopScanUseCase,
-    private val isScanningUseCase: IsScanningUseCase,
-    private val getDefaultFiltersUseCase: GetDefaultFiltersUseCase
+    private val advancedRepository: AdvancedFileRecoveryRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(MainUiState())
     val uiState: StateFlow<MainUiState> = _uiState.asStateFlow()
 
-    val scanProgress: StateFlow<ScanProgress> = getScanProgressUseCase()
+    val scanProgress: StateFlow<ScanProgress> = advancedRepository.getScanProgress()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = ScanProgress()
         )
 
-    val isScanning: StateFlow<Boolean> = isScanningUseCase()
+    val isScanning: StateFlow<Boolean> = advancedRepository.isScanning()
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
@@ -37,22 +33,34 @@ class MainViewModel @Inject constructor(
 
     init {
         loadInitialState()
+        initializeScanner()
     }
 
     private fun loadInitialState() {
         viewModelScope.launch {
             _uiState.update { currentState ->
                 currentState.copy(
-                    fileTypeFilters = getDefaultFiltersUseCase()
+                    fileTypeFilters = advancedRepository.getDefaultFileTypeFilters()
                 )
             }
         }
     }
 
-    fun onScanTypeChanged(scanType: ScanType) {
-        _uiState.update { currentState ->
-            currentState.copy(selectedScanType = scanType)
+    private fun initializeScanner() {
+        viewModelScope.launch {
+            try {
+                val initialized = advancedRepository.initializeScanner()
+                if (!initialized) {
+                    _uiState.update { it.copy(error = "Failed to initialize native scanner") }
+                }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(error = "Scanner initialization error: ${e.message}") }
+            }
         }
+    }
+
+    fun setScanMode(scanMode: ScanMode) {
+        _uiState.update { it.copy(selectedScanMode = scanMode) }
     }
 
     fun onFileTypeToggled(fileType: FileType, enabled: Boolean) {
@@ -69,8 +77,8 @@ class MainViewModel @Inject constructor(
             try {
                 _uiState.update { it.copy(error = null, recoveredFiles = emptyList()) }
                 
-                startScanUseCase(
-                    _uiState.value.selectedScanType,
+                advancedRepository.startAdvancedScan(
+                    _uiState.value.selectedScanMode,
                     _uiState.value.fileTypeFilters.filter { it.enabled }
                 ).collect { files ->
                     _uiState.update { currentState ->
@@ -87,7 +95,7 @@ class MainViewModel @Inject constructor(
 
     fun stopScan() {
         viewModelScope.launch {
-            stopScanUseCase()
+            advancedRepository.stopScan()
         }
     }
 
@@ -97,7 +105,7 @@ class MainViewModel @Inject constructor(
 }
 
 data class MainUiState(
-    val selectedScanType: ScanType = ScanType.QUICK,
+    val selectedScanMode: ScanMode = ScanMode.BASIC,
     val fileTypeFilters: List<FileTypeFilter> = emptyList(),
     val recoveredFiles: List<RecoverableFile> = emptyList(),
     val error: String? = null

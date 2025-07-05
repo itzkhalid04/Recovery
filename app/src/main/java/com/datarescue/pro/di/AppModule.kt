@@ -1,20 +1,21 @@
 package com.datarescue.pro.di
 
-import com.datarescue.pro.data.repository.FileRecoveryRepositoryImpl
-import com.datarescue.pro.domain.repository.FileRecoveryRepository
-import dagger.Binds
+import com.datarescue.pro.data.native.NativeFileScanner
+import com.datarescue.pro.data.repository.AdvancedFileRecoveryRepository
+import com.datarescue.pro.data.repository.DeviceInfoRepository
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class AppModule {
+object AppModule {
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindFileRecoveryRepository(
-        fileRecoveryRepositoryImpl: FileRecoveryRepositoryImpl
-    ): FileRecoveryRepository
+    fun provideNativeFileScanner(): NativeFileScanner {
+        return NativeFileScanner()
+    }
 }

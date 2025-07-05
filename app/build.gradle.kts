@@ -22,6 +22,20 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        ndk {
+            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
+        }
+
+        externalNativeBuild {
+            cmake {
+                cppFlags += listOf("-std=c++17", "-frtti", "-fexceptions")
+                arguments += listOf(
+                    "-DANDROID_STL=c++_shared",
+                    "-DANDROID_PLATFORM=android-26"
+                )
+            }
+        }
     }
 
     buildTypes {
@@ -43,7 +57,6 @@ android {
         jvmTarget = "17"
     }
 
-    // Add this to ensure consistent JVM target for kapt
     kapt {
         correctErrorTypes = true
         useBuildCache = true
@@ -61,9 +74,19 @@ android {
         kotlinCompilerExtensionVersion = "1.5.14"
     }
 
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+        }
+        jniLibs {
+            useLegacyPackaging = true
         }
     }
 
@@ -76,38 +99,46 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.1")
     implementation("androidx.activity:activity-compose:1.10.1")
 
-    // Compose BOM - Updated to latest
+    // Compose BOM
     implementation(platform("androidx.compose:compose-bom:2025.06.01"))
     implementation("androidx.compose.ui:ui")
     implementation("androidx.compose.ui:ui-graphics")
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
 
-    // Navigation - Updated
+    // Navigation
     implementation("androidx.navigation:navigation-compose:2.9.1")
 
     // ViewModel
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
 
-    // Hilt - Updated to latest
+    // Hilt
     implementation("com.google.dagger:hilt-android:2.56.2")
     kapt("com.google.dagger:hilt-compiler:2.56.2")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    // Coroutines - Updated
+    // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")
 
-    // Image loading - Updated
+    // Image loading
     implementation("io.coil-kt:coil-compose:2.7.0")
 
-    // Permissions - Updated
+    // Permissions
     implementation("com.google.accompanist:accompanist-permissions:0.37.3")
 
     // File operations
     implementation("androidx.documentfile:documentfile:1.1.0")
 
-    // Date/Time - Updated
+    // Date/Time
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0")
+
+    // JSON parsing for native data
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // Root detection and management
+    implementation("com.github.topjohnwu.libsu:core:6.0.0")
+    implementation("com.github.topjohnwu.libsu:io:6.0.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
