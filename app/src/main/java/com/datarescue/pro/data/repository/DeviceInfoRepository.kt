@@ -6,7 +6,6 @@ import android.os.Environment
 import android.os.StatFs
 import com.datarescue.pro.data.native.NativeFileScanner
 import com.datarescue.pro.domain.model.*
-import com.topjohnwu.libsu.Shell
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -46,8 +45,8 @@ class DeviceInfoRepository @Inject constructor(
                 return@withContext true
             }
             
-            // Check with libsu
-            Shell.getShell().isRoot
+            // Check for common root indicators
+            checkForRootFiles()
         } catch (e: Exception) {
             false
         }
@@ -106,6 +105,19 @@ class DeviceInfoRepository @Inject constructor(
         
         return xposedPaths.any { File(it).exists() } ||
                 isPackageInstalled("de.robv.android.xposed.installer")
+    }
+    
+    private fun checkForRootFiles(): Boolean {
+        val rootFiles = listOf(
+            "/system/bin/su",
+            "/system/xbin/su",
+            "/sbin/su",
+            "/vendor/bin/su",
+            "/data/local/xbin/su",
+            "/data/local/bin/su"
+        )
+        
+        return rootFiles.any { File(it).exists() }
     }
     
     private fun isPackageInstalled(packageName: String): Boolean {

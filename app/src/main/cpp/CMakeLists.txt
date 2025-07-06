@@ -47,8 +47,6 @@ target_compile_options(datarescue_native PRIVATE
     -O3
     -ffast-math
     -funroll-loops
-    -fno-rtti
-    -fno-exceptions
 )
 
 # Define preprocessor macros

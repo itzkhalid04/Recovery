@@ -1,6 +1,8 @@
 #include "f2fs_scanner.h"
 #include "../utils/root_utils.h"
 #include <android/log.h>
+#include <ctime>
+#include <algorithm>
 
 #define LOG_TAG "F2fsScanner"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -66,7 +68,7 @@ bool F2fsScanner::readCheckpoint(const std::string& device) {
     return true;
 }
 
-std::vector<F2fsScanner::F2fsNode> F2fsScanner::scanNodeArea(const std::string& device) {
+std::vector<F2fsScanner::F2fsNode> F2fsScanner::scanNodeArea(const std::string&) {
     std::vector<F2fsNode> nodes;
     
     // Mock F2FS nodes for demonstration

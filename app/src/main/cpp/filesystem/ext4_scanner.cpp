@@ -3,6 +3,8 @@
 #include <android/log.h>
 #include <fstream>
 #include <cstring>
+#include <ctime>
+#include <algorithm>
 
 #define LOG_TAG "Ext4Scanner"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -81,7 +83,7 @@ bool Ext4Scanner::readSuperblock(const std::string& device) {
     return true;
 }
 
-std::vector<Ext4Scanner::Ext4Inode> Ext4Scanner::scanInodeTable(const std::string& device) {
+std::vector<Ext4Scanner::Ext4Inode> Ext4Scanner::scanInodeTable(const std::string&) {
     std::vector<Ext4Inode> inodes;
     
     if (!m_isRooted) {

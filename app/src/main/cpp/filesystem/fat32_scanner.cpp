@@ -3,6 +3,8 @@
 #include <android/log.h>
 #include <fstream>
 #include <cstring>
+#include <algorithm>
+#include <ctime>
 
 #define LOG_TAG "Fat32Scanner"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -81,7 +83,7 @@ bool Fat32Scanner::readBootSector(const std::string& device) {
     return true;
 }
 
-std::vector<Fat32Scanner::Fat32DirectoryEntry> Fat32Scanner::scanDirectoryEntries(const std::string& device) {
+std::vector<Fat32Scanner::Fat32DirectoryEntry> Fat32Scanner::scanDirectoryEntries(const std::string&) {
     std::vector<Fat32DirectoryEntry> entries;
     
     if (!m_isRooted) {
@@ -97,9 +99,9 @@ std::vector<Fat32Scanner::Fat32DirectoryEntry> Fat32Scanner::scanDirectoryEntrie
     // For demonstration, create some mock deleted entries
     for (int i = 0; i < 75; ++i) {
         Fat32DirectoryEntry entry = {};
-        entry.name[0] = 0xE5; // Deleted marker
-        snprintf(entry.name + 1, 10, "FILE%04d", i);
-        snprintf(entry.ext, 3, "TXT");
+        entry.name[0] = static_cast<char>(0xE5); // Deleted marker
+        snprintf(entry.name + 1, 7, "FILE%02d", i); // Fixed buffer size
+        strncpy(entry.ext, "TXT", 3);
         entry.size = 1024 * (i + 1);
         entry.firstCluster = 100 + i;
         entry.date = 0x4A21; // Example date
@@ -134,13 +136,6 @@ RecoveredFileInfo Fat32Scanner::entryToFileInfo(const Fat32DirectoryEntry& entry
     info.size = entry.size;
     
     // Convert FAT32 date/time to Unix timestamp
-    int year = ((entry.date >> 9) & 0x7F) + 1980;
-    int month = (entry.date >> 5) & 0x0F;
-    int day = entry.date & 0x1F;
-    int hour = (entry.time >> 11) & 0x1F;
-    int minute = (entry.time >> 5) & 0x3F;
-    int second = (entry.time & 0x1F) * 2;
-    
     // Simple timestamp calculation (not accurate, for demo)
     time_t timestamp = time(nullptr) - (365 * 24 * 3600); // Assume 1 year ago
     info.dateModified = timestamp * 1000LL;
@@ -183,5 +178,5 @@ RecoveredFileInfo Fat32Scanner::entryToFileInfo(const Fat32DirectoryEntry& entry
 
 bool Fat32Scanner::isEntryDeleted(const Fat32DirectoryEntry& entry) {
     // In FAT32, deleted files have their first character replaced with 0xE5
-    return entry.name[0] == 0xE5;
+    return static_cast<unsigned char>(entry.name[0]) == 0xE5;
 }

@@ -29,7 +29,7 @@ android {
 
         externalNativeBuild {
             cmake {
-                cppFlags += listOf("-std=c++17", "-frtti", "-fexceptions")
+                cppFlags += listOf("-std=c++17")
                 arguments += listOf(
                     "-DANDROID_STL=c++_shared",
                     "-DANDROID_PLATFORM=android-26"
@@ -135,10 +135,6 @@ dependencies {
 
     // JSON parsing for native data
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
-
-    // Root detection and management
-    implementation("com.github.topjohnwu.libsu:core:6.0.0")
-    implementation("com.github.topjohnwu.libsu:io:6.0.0")
 
     // Testing
     testImplementation("junit:junit:4.13.2")
