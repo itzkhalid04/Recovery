@@ -63,6 +63,10 @@ class MainViewModel @Inject constructor(
         _uiState.update { it.copy(selectedScanMode = scanMode) }
     }
 
+    fun onScanTypeChanged(scanType: ScanType) {
+        _uiState.update { it.copy(selectedScanType = scanType) }
+    }
+
     fun onFileTypeToggled(fileType: FileType, enabled: Boolean) {
         _uiState.update { currentState ->
             val updatedFilters = currentState.fileTypeFilters.map { filter ->
@@ -106,6 +110,7 @@ class MainViewModel @Inject constructor(
 
 data class MainUiState(
     val selectedScanMode: ScanMode = ScanMode.BASIC,
+    val selectedScanType: ScanType = ScanType.QUICK,
     val fileTypeFilters: List<FileTypeFilter> = emptyList(),
     val recoveredFiles: List<RecoverableFile> = emptyList(),
     val error: String? = null

@@ -70,32 +70,34 @@ class AdvancedFileRecoveryRepository @Inject constructor(
     private suspend fun performBasicScan(
         fileTypes: List<FileTypeFilter>,
         startTime: Long
-    ): Array<NativeRecoverableFile> {
+    ): List<NativeRecoverableFile> = withContext(Dispatchers.IO) {
         val enabledTypes = fileTypes.filter { it.enabled }.map { it.type.ordinal }.toIntArray()
         
         updateProgress("Starting basic scan...", 0, 100, startTime)
         
-        return nativeScanner.startQuickScan(enabledTypes)
+        val resultArray = nativeScanner.startQuickScan(enabledTypes)
+        resultArray.toList()
     }
     
     private suspend fun performAdvancedScan(
         fileTypes: List<FileTypeFilter>,
         partition: String?,
         startTime: Long
-    ): Array<NativeRecoverableFile> {
+    ): List<NativeRecoverableFile> = withContext(Dispatchers.IO) {
         val enabledTypes = fileTypes.filter { it.enabled }.map { it.type.ordinal }.toIntArray()
         val targetPartition = partition ?: "/data"
         
         updateProgress("Starting advanced scan on $targetPartition...", 0, 100, startTime)
         
-        return nativeScanner.startDeepScan(targetPartition, enabledTypes)
+        val resultArray = nativeScanner.startDeepScan(targetPartition, enabledTypes)
+        resultArray.toList()
     }
     
     private suspend fun performDeepScan(
         fileTypes: List<FileTypeFilter>,
         partition: String?,
         startTime: Long
-    ): Array<NativeRecoverableFile> {
+    ): List<NativeRecoverableFile> = withContext(Dispatchers.IO) {
         val enabledTypes = fileTypes.filter { it.enabled }.map { it.type.ordinal }.toIntArray()
         val availablePartitions = nativeScanner.getAvailablePartitions()
         
@@ -108,7 +110,7 @@ class AdvancedFileRecoveryRepository @Inject constructor(
         }
         
         partitionsToScan.forEachIndexed { index, part ->
-            if (shouldStopScan) return allResults.toTypedArray()
+            if (shouldStopScan) return@withContext allResults
             
             updateProgress("Deep scanning partition $part...", 
                           (index * 100) / partitionsToScan.size, 
@@ -120,7 +122,7 @@ class AdvancedFileRecoveryRepository @Inject constructor(
             delay(100) // Small delay between partitions
         }
         
-        return allResults.toTypedArray()
+        allResults
     }
     
     private fun convertNativeToRecoverableFile(nativeFile: NativeRecoverableFile): RecoverableFile {
