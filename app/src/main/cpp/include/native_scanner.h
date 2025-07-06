@@ -27,6 +27,11 @@ struct ScanProgress {
     long long timeElapsed;
 };
 
+// Forward declarations
+class FileSystemScanner;
+class FileCarver;
+class SignatureDetector;
+
 class NativeScanner {
 public:
     NativeScanner();
@@ -46,9 +51,21 @@ public:
 private:
     bool m_isRooted;
     bool m_shouldStop;
-    std::unique_ptr<class FileSystemScanner> m_fsScanner;
-    std::unique_ptr<class FileCarver> m_fileCarver;
-    std::unique_ptr<class SignatureDetector> m_signatureDetector;
+    std::unique_ptr<FileSystemScanner> m_fsScanner;
+    std::unique_ptr<FileCarver> m_fileCarver;
+    std::unique_ptr<SignatureDetector> m_signatureDetector;
+    
+    // Private helper methods
+    std::vector<RecoveredFileInfo> scanAccessibleAreas(const std::vector<int>& fileTypes,
+                                                      bool (*progressCallback)(const ScanProgress&));
+    std::vector<RecoveredFileInfo> scanDirectory(const std::string& path,
+                                               const std::vector<int>& fileTypes,
+                                               int maxDepth,
+                                               int currentDepth = 0);
+    RecoveredFileInfo analyzeFile(const std::string& path, const struct stat& fileStat);
+    int calculateConfidence(const std::string& path, const struct stat& fileStat);
+    bool isFileRecoverable(const std::string& path, const struct stat& fileStat);
+    bool shouldIncludeFile(const RecoveredFileInfo& fileInfo, const std::vector<int>& fileTypes);
 };
 
 #endif // NATIVE_SCANNER_H

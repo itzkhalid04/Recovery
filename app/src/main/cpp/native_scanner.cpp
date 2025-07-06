@@ -1,4 +1,4 @@
-#include "native_scanner.h"
+#include "include/native_scanner.h"
 #include "filesystem/ext4_scanner.h"
 #include "filesystem/f2fs_scanner.h"
 #include "filesystem/fat32_scanner.h"
@@ -13,10 +13,83 @@
 #include <fstream>
 #include <algorithm>
 #include <chrono>
+#include <memory>
+#include <cstring>
+#include <ctime>
 
 #define LOG_TAG "DataRescueNative"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
+
+// Forward declarations for filesystem scanner interface
+class FileSystemScanner {
+public:
+    virtual ~FileSystemScanner() = default;
+    virtual bool initialize(bool isRooted) = 0;
+    virtual std::vector<RecoveredFileInfo> scanDeletedFiles(
+        const std::string& partition,
+        const std::vector<int>& fileTypes,
+        std::function<bool(const ScanProgress&)> progressCallback
+    ) = 0;
+};
+
+// Wrapper classes for filesystem scanners
+class Ext4ScannerWrapper : public FileSystemScanner {
+private:
+    std::unique_ptr<Ext4Scanner> scanner;
+public:
+    Ext4ScannerWrapper() : scanner(std::make_unique<Ext4Scanner>()) {}
+    
+    bool initialize(bool isRooted) override {
+        return scanner->initialize(isRooted);
+    }
+    
+    std::vector<RecoveredFileInfo> scanDeletedFiles(
+        const std::string& partition,
+        const std::vector<int>& fileTypes,
+        std::function<bool(const ScanProgress&)> progressCallback
+    ) override {
+        return scanner->scanDeletedFiles(partition, fileTypes, progressCallback);
+    }
+};
+
+class F2fsScannerWrapper : public FileSystemScanner {
+private:
+    std::unique_ptr<F2fsScanner> scanner;
+public:
+    F2fsScannerWrapper() : scanner(std::make_unique<F2fsScanner>()) {}
+    
+    bool initialize(bool isRooted) override {
+        return scanner->initialize(isRooted);
+    }
+    
+    std::vector<RecoveredFileInfo> scanDeletedFiles(
+        const std::string& partition,
+        const std::vector<int>& fileTypes,
+        std::function<bool(const ScanProgress&)> progressCallback
+    ) override {
+        return scanner->scanDeletedFiles(partition, fileTypes, progressCallback);
+    }
+};
+
+class Fat32ScannerWrapper : public FileSystemScanner {
+private:
+    std::unique_ptr<Fat32Scanner> scanner;
+public:
+    Fat32ScannerWrapper() : scanner(std::make_unique<Fat32Scanner>()) {}
+    
+    bool initialize(bool isRooted) override {
+        return scanner->initialize(isRooted);
+    }
+    
+    std::vector<RecoveredFileInfo> scanDeletedFiles(
+        const std::string& partition,
+        const std::vector<int>& fileTypes,
+        std::function<bool(const ScanProgress&)> progressCallback
+    ) override {
+        return scanner->scanDeletedFiles(partition, fileTypes, progressCallback);
+    }
+};
 
 NativeScanner::NativeScanner() : m_isRooted(false), m_shouldStop(false) {
     m_signatureDetector = std::make_unique<SignatureDetector>();
@@ -43,11 +116,11 @@ bool NativeScanner::initialize(bool isRooted) {
     LOGI("Detected file system: %s", fsType.c_str());
 
     if (fsType == "ext4") {
-        m_fsScanner = std::make_unique<Ext4Scanner>();
+        m_fsScanner = std::make_unique<Ext4ScannerWrapper>();
     } else if (fsType == "f2fs") {
-        m_fsScanner = std::make_unique<F2fsScanner>();
+        m_fsScanner = std::make_unique<F2fsScannerWrapper>();
     } else {
-        m_fsScanner = std::make_unique<Fat32Scanner>();
+        m_fsScanner = std::make_unique<Fat32ScannerWrapper>();
     }
 
     return m_fsScanner->initialize(m_isRooted);
@@ -89,7 +162,7 @@ std::vector<RecoveredFileInfo> NativeScanner::startDeepScan(const std::string& p
     auto endTime = std::chrono::steady_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
     
-    LOGI("Deep scan completed. Found %zu files in %lld ms", results.size(), duration.count());
+    LOGI("Deep scan completed. Found %zu files in %lld ms", results.size(), (long long)duration.count());
     
     return results;
 }

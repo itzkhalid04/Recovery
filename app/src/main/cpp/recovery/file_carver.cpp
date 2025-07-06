@@ -2,6 +2,7 @@
 #include <android/log.h>
 #include <fstream>
 #include <algorithm>
+#include <ctime>
 
 #define LOG_TAG "FileCarver"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)

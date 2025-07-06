@@ -40,11 +40,19 @@ target_link_libraries(
     log
 )
 
-# Compiler flags
+# Compiler flags for optimization and compatibility
 target_compile_options(datarescue_native PRIVATE
     -Wall
     -Wextra
     -O3
     -ffast-math
     -funroll-loops
+    -fno-rtti
+    -fno-exceptions
+)
+
+# Define preprocessor macros
+target_compile_definitions(datarescue_native PRIVATE
+    ANDROID_NDK
+    __ANDROID__
 )
