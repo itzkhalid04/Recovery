@@ -10,6 +10,7 @@ data class RecoverableFile(
     val id: String,
     val name: String,
     val path: String,
+    val originalPath: String = path,
     val size: Long,
     val type: FileType,
     val dateDeleted: @RawValue Instant? = null,
@@ -38,11 +39,11 @@ enum class ScanType(val displayName: String, val description: String) {
 
 data class ScanProgress(
     val currentFile: String = "",
-    val filesScanned: Int = 0,
-    val totalFiles: Int = 0,
+    val filesScanned: Long = 0L,
+    val totalFiles: Long = 0L,
     val percentage: Int = 0,
-    val timeElapsed: Long = 0,
-    val estimatedTimeRemaining: Long = 0
+    val timeElapsed: Long = 0L,
+    val estimatedTimeRemaining: Long = 0L
 )
 
 data class RecoveryResult(

@@ -129,12 +129,12 @@ class FileRecoveryRepositoryImpl @Inject constructor(
             MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         )
         
-        var totalEstimated = 0
-        var scannedCount = 0
+        var totalEstimated = 0L
+        var scannedCount = 0L
         
         // Estimate total files
         mediaUris.forEach { uri ->
-            totalEstimated += getMediaStoreCount(uri)
+            totalEstimated += getMediaStoreCount(uri).toLong()
         }
         
         _scanProgress.value = _scanProgress.value.copy(totalFiles = totalEstimated)
@@ -326,7 +326,7 @@ class FileRecoveryRepositoryImpl @Inject constructor(
             directory.listFiles()?.forEach { file ->
                 if (shouldStopScan) return files
                 
-                updateProgress(file.name, 0, 0, startTime)
+                updateProgress(file.name, 0L, 0L, startTime)
                 
                 if (file.isFile) {
                     val recoverableFile = analyzeFile(file)
@@ -369,6 +369,7 @@ class FileRecoveryRepositoryImpl @Inject constructor(
                 id = "${path}_${System.currentTimeMillis()}_${Random.nextInt()}",
                 name = name,
                 path = path,
+                originalPath = path,
                 size = size,
                 type = fileType,
                 dateModified = Instant.fromEpochMilliseconds(dateModified),
@@ -420,17 +421,17 @@ class FileRecoveryRepositoryImpl @Inject constructor(
         return confidence.coerceIn(0, 100)
     }
 
-    private fun updateProgress(currentFile: String, scanned: Int, total: Int, startTime: Long) {
-        val percentage = if (total > 0) {
-            ((scanned.toFloat() / total) * 100).toInt().coerceIn(0, 100)
+    private fun updateProgress(currentFile: String, scanned: Long, total: Long, startTime: Long) {
+        val percentage = if (total > 0L) {
+            ((scanned.toFloat() / total.toFloat()) * 100f).toInt().coerceIn(0, 100)
         } else {
             _scanProgress.value.percentage
         }
         
         _scanProgress.value = _scanProgress.value.copy(
             currentFile = currentFile,
-            filesScanned = if (scanned > 0) scanned else _scanProgress.value.filesScanned + 1,
-            totalFiles = if (total > 0) total else _scanProgress.value.totalFiles,
+            filesScanned = if (scanned > 0L) scanned else _scanProgress.value.filesScanned + 1L,
+            totalFiles = if (total > 0L) total else _scanProgress.value.totalFiles,
             percentage = percentage,
             timeElapsed = System.currentTimeMillis() - startTime
         )
@@ -528,6 +529,7 @@ class FileRecoveryRepositoryImpl @Inject constructor(
                 id = "${file.absolutePath}_${System.currentTimeMillis()}_${Random.nextInt()}",
                 name = file.name,
                 path = file.absolutePath,
+                originalPath = file.absolutePath,
                 size = file.length(),
                 type = fileType,
                 dateModified = Instant.fromEpochMilliseconds(file.lastModified()),

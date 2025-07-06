@@ -73,7 +73,7 @@ class AdvancedFileRecoveryRepository @Inject constructor(
     ): List<NativeRecoverableFile> = withContext(Dispatchers.IO) {
         val enabledTypes = fileTypes.filter { it.enabled }.map { it.type.ordinal }.toIntArray()
         
-        updateProgress("Starting basic scan...", 0, 100, startTime)
+        updateProgress("Starting basic scan...", 0L, 100L, startTime)
         
         val resultArray = nativeScanner.startQuickScan(enabledTypes)
         resultArray.toList()
@@ -87,7 +87,7 @@ class AdvancedFileRecoveryRepository @Inject constructor(
         val enabledTypes = fileTypes.filter { it.enabled }.map { it.type.ordinal }.toIntArray()
         val targetPartition = partition ?: "/data"
         
-        updateProgress("Starting advanced scan on $targetPartition...", 0, 100, startTime)
+        updateProgress("Starting advanced scan on $targetPartition...", 0L, 100L, startTime)
         
         val resultArray = nativeScanner.startDeepScan(targetPartition, enabledTypes)
         resultArray.toList()
@@ -113,8 +113,9 @@ class AdvancedFileRecoveryRepository @Inject constructor(
             if (shouldStopScan) return@withContext allResults
             
             updateProgress("Deep scanning partition $part...", 
-                          (index * 100) / partitionsToScan.size, 
-                          100, startTime)
+                          index.toLong(), 
+                          partitionsToScan.size.toLong(), 
+                          startTime)
             
             val partitionResults = nativeScanner.startDeepScan(part, enabledTypes)
             allResults.addAll(partitionResults)
@@ -187,17 +188,17 @@ class AdvancedFileRecoveryRepository @Inject constructor(
         }
     }.flowOn(Dispatchers.IO)
     
-    private fun updateProgress(currentFile: String, scanned: Int, total: Int, startTime: Long) {
-        val percentage = if (total > 0) {
-            ((scanned.toFloat() / total) * 100).toInt().coerceIn(0, 100)
+    private fun updateProgress(currentFile: String, scanned: Long, total: Long, startTime: Long) {
+        val percentage = if (total > 0L) {
+            ((scanned.toFloat() / total.toFloat()) * 100f).toInt().coerceIn(0, 100)
         } else {
             _scanProgress.value.percentage
         }
         
         _scanProgress.value = _scanProgress.value.copy(
             currentFile = currentFile,
-            filesScanned = if (scanned > 0) scanned.toLong() else _scanProgress.value.filesScanned + 1,
-            totalFiles = if (total > 0) total.toLong() else _scanProgress.value.totalFiles,
+            filesScanned = if (scanned > 0L) scanned else _scanProgress.value.filesScanned + 1L,
+            totalFiles = if (total > 0L) total else _scanProgress.value.totalFiles,
             percentage = percentage,
             timeElapsed = System.currentTimeMillis() - startTime
         )
